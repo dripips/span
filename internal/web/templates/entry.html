@@ -1,0 +1,65 @@
+{{template "head" .}}
+{{template "topbar" .}}
+<main class="wrap narrow">
+  <div class="page-head">
+    <h1>{{.Title}}</h1>
+  </div>
+
+  <section class="panel">
+    <form class="form" method="post" action="{{if and .Entry .Entry.ID}}/entries/{{.Entry.ID}}{{else}}/entries{{end}}">
+      {{if .Error}}<p class="form-error" role="alert">{{t .Lang "entry.invalid"}}</p>{{end}}
+
+      <div class="field">
+        <label for="project">{{t .Lang "entry.project"}}</label>
+        <select class="select" id="project" name="project_id" required>
+          {{$sel := 0}}{{if .Entry}}{{$sel = .Entry.ProjectID}}{{end}}
+          {{range .Projects}}
+            <option value="{{.ID}}"{{if eq .ID $sel}} selected{{end}}>{{.ClientName}} — {{.Name}}</option>
+          {{end}}
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="desc">{{t .Lang "entry.desc"}}</label>
+        <input class="input" id="desc" type="text" name="description" value="{{if .Entry}}{{.Entry.Description}}{{end}}" placeholder="{{t .Lang "timer.what"}}">
+      </div>
+
+      <div class="row3">
+        <div class="field">
+          <label for="date">{{t .Lang "entry.date"}}</label>
+          <input class="input" id="date" type="date" name="date" required
+                 value="{{if and .Entry .Entry.ID}}{{iso .Entry.StartedAt.Local}}{{else}}{{iso .Day}}{{end}}">
+        </div>
+        <div class="field">
+          <label for="from">{{t .Lang "entry.from"}}</label>
+          <input class="input" id="from" type="time" name="from" required
+                 value="{{if and .Entry .Entry.ID}}{{clock .Entry.StartedAt}}{{else}}09:00{{end}}">
+        </div>
+        <div class="field">
+          <label for="to">{{t .Lang "entry.to"}}</label>
+          <input class="input" id="to" type="time" name="to" required
+                 value="{{if and .Entry .Entry.ID .Entry.EndedAt.Valid}}{{clock .Entry.EndedAt.Time}}{{else}}12:00{{end}}">
+        </div>
+      </div>
+
+      <label class="check">
+        <input type="checkbox" name="billable" value="1"{{if or (not .Entry) (not .Entry.ID) .Entry.Billable}} checked{{end}}>
+        {{t .Lang "entry.billable"}}
+      </label>
+
+      <div class="form__actions">
+        <button class="btn btn--primary">{{t .Lang "entry.save"}}</button>
+        <a class="btn btn--ghost" href="/?day={{iso .Day}}&amp;week={{iso .Day}}">{{t .Lang "entry.cancel"}}</a>
+        {{if and .Entry .Entry.ID}}
+        <span class="form__actions-end">
+          <button class="btn btn--danger" form="delete-entry">{{t .Lang "entry.delete"}}</button>
+        </span>
+        {{end}}
+      </div>
+    </form>
+    {{if and .Entry .Entry.ID}}
+    <form id="delete-entry" method="post" action="/entries/{{.Entry.ID}}/delete" data-confirm="{{t .Lang "entry.delete"}}?"></form>
+    {{end}}
+  </section>
+</main>
+{{template "foot" .}}

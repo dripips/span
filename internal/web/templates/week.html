@@ -1,0 +1,123 @@
+{{template "head" .}}
+{{template "topbar" .}}
+<main class="wrap">
+  {{template "timer" .}}
+
+  <div class="week-head">
+    <div>
+      <h1>{{t .Lang "week.title"}} {{weeknum .Week.Start}}</h1>
+      <p class="week-head__range">{{stamp .Week.Start}} — {{stamp (addDays .Week.Start 6)}}</p>
+    </div>
+    <div class="week-nav">
+      <a class="btn btn--ghost btn--icon" href="/?week={{iso (addDays .Week.Start -7)}}" aria-label="{{t .Lang "week.prev"}}">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3L5 8l5 5"/></svg>
+      </a>
+      <a class="btn btn--ghost btn--sm" href="/">{{t .Lang "week.today"}}</a>
+      <a class="btn btn--ghost btn--icon" href="/?week={{iso (addDays .Week.Start 7)}}" aria-label="{{t .Lang "week.next"}}">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3l5 5-5 5"/></svg>
+      </a>
+      <a class="btn btn--primary btn--sm" href="/entries/new?day={{iso .Day}}">{{t .Lang "entry.add"}}</a>
+    </div>
+  </div>
+
+  {{if .Week.Rows}}
+  <div class="grid-wrap">
+    <table class="grid">
+      <thead>
+        <tr>
+          <th scope="col">{{t .Lang "week.project"}}</th>
+          {{range $i, $d := .Week.Days}}
+            <th scope="col" class="{{if today $d}}is-today{{end}} {{if weekend $d}}is-weekend{{end}}">
+              {{index $.Weekdays $i}}<small>{{day $d}}</small>
+            </th>
+          {{end}}
+          <th scope="col" class="total">{{t .Lang "week.total"}}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range $row := .Week.Rows}}
+        <tr>
+          <th scope="row">
+            <span class="project-cell">
+              <span class="project-dot" style="background: {{$row.Project.Color}}"></span>
+              <span>
+                <span class="project-cell__name">{{$row.Project.Name}}</span><br>
+                <span class="project-cell__client">{{$row.Project.ClientName}}</span>
+              </span>
+              <span class="project-cell__start">
+                <form method="post" action="/timer/start">
+                  <input type="hidden" name="project_id" value="{{$row.Project.ID}}">
+                  <button class="btn btn--ghost btn--sm" title="{{t $.Lang "timer.start"}}">
+                    <svg width="10" height="11" viewBox="0 0 10 11" fill="currentColor" aria-hidden="true"><path d="M0 .8v9.4l9-4.7z"/></svg>
+                    {{t $.Lang "timer.start"}}
+                  </button>
+                </form>
+              </span>
+            </span>
+          </th>
+          {{range $i, $cell := $row.Days}}
+            {{$d := index $.Week.Days $i}}
+            <td class="{{if weekend $d}}is-weekend{{end}}">
+              {{if $cell.Minutes}}
+                <a class="cell num" href="/?week={{iso $.Week.Start}}&amp;day={{iso $d}}">{{hm $cell.Minutes}}</a>
+              {{else}}
+                <a class="cell cell--empty" href="/entries/new?day={{iso $d}}&amp;project={{$row.Project.ID}}" aria-label="{{t $.Lang "entry.add"}}">·</a>
+              {{end}}
+            </td>
+          {{end}}
+          <td class="total num">{{hm $row.Total}}</td>
+        </tr>
+        {{end}}
+      </tbody>
+      <tfoot>
+        <tr>
+          <td>{{t .Lang "week.total"}}</td>
+          {{range $i, $m := .Week.DayTotals}}
+            <td class="num {{if weekend (index $.Week.Days $i)}}is-weekend{{end}}">{{hm $m}}</td>
+          {{end}}
+          <td class="total num">{{hm .Week.Total}}</td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+  {{if .Week.Total}}
+  <p class="week-foot">{{t .Lang "report.amount"}}: <strong class="num">{{money .Week.Amount .Week.Currency}}</strong></p>
+  {{end}}
+  {{else}}
+  <div class="panel empty">
+    <p class="empty__title">{{t .Lang "week.empty"}}</p>
+    <p class="empty__hint">{{t .Lang "week.empty_hint"}}</p>
+    <p><a class="btn btn--primary" href="/clients">{{t .Lang "clients.new"}}</a></p>
+  </div>
+  {{end}}
+
+  <section class="panel day-panel">
+    <div class="panel__head">
+      <span class="panel__title">{{t .Lang "entry.day"}} · {{stamp .Day}}</span>
+      <a class="btn btn--ghost btn--sm" href="/entries/new?day={{iso .Day}}">{{t .Lang "entry.add"}}</a>
+    </div>
+    {{if .Entries}}
+      {{range .Entries}}
+      <div class="row-item">
+        <span class="project-dot" style="background: {{.Color}}"></span>
+        <span>
+          <span class="row-item__name">{{.ProjectName}}{{if not .Billable}} <span class="tag tag--unbilled">{{t $.Lang "report.unbilled"}}</span>{{end}}</span><br>
+          <span class="row-item__meta">{{.ClientName}}{{if .Description}} · {{.Description}}{{end}}</span>
+        </span>
+        <span class="row-item__time num">
+          {{clock .StartedAt}}{{if .EndedAt.Valid}}–{{clock .EndedAt.Time}}{{else}} …{{end}} · {{hm .Minutes}}
+        </span>
+        <span class="row-item__actions">
+          <a class="btn btn--ghost btn--sm" href="/entries/{{.ID}}/edit">{{t $.Lang "entry.edit"}}</a>
+          <form method="post" action="/entries/{{.ID}}/delete" data-confirm="{{t $.Lang "entry.delete"}}?">
+            <button class="btn btn--danger btn--sm">{{t $.Lang "entry.delete"}}</button>
+          </form>
+        </span>
+      </div>
+      {{end}}
+    {{else}}
+      <p class="empty__hint" style="padding: 24px">{{t .Lang "entry.none"}}</p>
+    {{end}}
+  </section>
+</main>
+{{template "foot" .}}

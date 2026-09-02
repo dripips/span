@@ -1,0 +1,138 @@
+{{define "head"}}<!doctype html>
+<html lang="{{.Lang}}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>{{.Title}} · Span</title>
+<link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/static/span.css">
+<script>
+  try {
+    var saved = localStorage.getItem("span-theme");
+    if (saved) { document.documentElement.dataset.theme = saved; }
+  } catch (e) {}
+</script>
+</head>
+<body>
+{{end}}
+
+{{define "topbar"}}
+<header class="topbar">
+  <div class="wrap topbar__inner">
+    <a class="brand" href="/">
+      <span class="brand__mark" aria-hidden="true">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
+          <circle cx="8" cy="8" r="6.4"/><path d="M8 4.6V8l2.4 1.6"/>
+        </svg>
+      </span>
+      Span
+    </a>
+    <nav>
+      <a href="/"{{if eq .Path "/"}} aria-current="page"{{end}}>{{t .Lang "nav.week"}}</a>
+      <a href="/report"{{if eq .Path "/report"}} aria-current="page"{{end}}>{{t .Lang "nav.report"}}</a>
+      <a href="/clients"{{if eq .Path "/clients"}} aria-current="page"{{end}}>{{t .Lang "nav.clients"}}</a>
+    </nav>
+    <div class="topbar__spacer"></div>
+    <form class="langs" method="post" action="/lang">
+      {{range .Langs}}<button class="langs__btn{{if eq . $.Lang}} is-active{{end}}" name="lang" value="{{.}}"{{if eq . $.Lang}} aria-current="true"{{end}}>{{.}}</button>{{end}}
+    </form>
+    <button class="icon-btn" data-theme-toggle type="button" aria-label="Light / dark">
+      <svg class="icon-sun" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+        <circle cx="8" cy="8" r="3.2"/><path d="M8 1v1.6M8 13.4V15M15 8h-1.6M2.6 8H1M12.9 3.1l-1.1 1.1M4.2 11.8l-1.1 1.1M12.9 12.9l-1.1-1.1M4.2 4.2L3.1 3.1"/>
+      </svg>
+      <svg class="icon-moon" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round">
+        <path d="M13.5 9.6A5.8 5.8 0 0 1 6.4 2.5a5.9 5.9 0 1 0 7.1 7.1z"/>
+      </svg>
+    </button>
+    <form method="post" action="/logout">
+      <button class="btn btn--ghost btn--sm">{{t .Lang "nav.logout"}}</button>
+    </form>
+  </div>
+</header>
+{{end}}
+
+{{define "timer"}}
+<section class="timer{{if .Running}} timer--running{{end}}">
+  {{if .Running}}
+    <span class="timer__state">
+      <svg class="timer__pulse" width="9" height="9" viewBox="0 0 9 9" aria-hidden="true"><circle cx="4.5" cy="4.5" r="4.5" fill="currentColor"/></svg>
+      {{t .Lang "timer.running"}}
+    </span>
+    <span class="timer__what">
+      <span class="timer__project"><span class="project-dot" style="background: {{.Running.Color}}"></span> {{.Running.ProjectName}}</span>
+      <span class="timer__desc">{{if .Running.Description}}{{.Running.Description}}{{else}}{{.Running.ClientName}}{{end}} · {{t .Lang "timer.since"}} {{clock .Running.StartedAt}}</span>
+    </span>
+    <span class="timer__clock num" data-tick="{{unix .Running.StartedAt}}">{{elapsed .Running}}</span>
+    <form method="post" action="/timer/stop">
+      <button class="btn btn--stop">{{t .Lang "timer.stop"}}</button>
+    </form>
+  {{else}}
+    <span class="timer__state">
+      <svg width="9" height="9" viewBox="0 0 9 9" aria-hidden="true"><circle cx="4.5" cy="4.5" r="4" fill="none" stroke="currentColor"/></svg>
+      {{t .Lang "timer.idle"}}
+    </span>
+    <form class="timer__form" method="post" action="/timer/start">
+      <select class="select" name="project_id" aria-label="{{t .Lang "entry.project"}}" {{if not .Projects}}disabled{{end}}>
+        {{range .Projects}}<option value="{{.ID}}">{{.ClientName}} — {{.Name}}</option>{{end}}
+      </select>
+      <input class="input" type="text" name="description" placeholder="{{t .Lang "timer.what"}}" aria-label="{{t .Lang "entry.desc"}}">
+      <button class="btn btn--primary" {{if not .Projects}}disabled{{end}}>{{t .Lang "timer.start"}}</button>
+    </form>
+  {{end}}
+</section>
+{{end}}
+
+{{define "foot"}}
+<script>
+  (function () {
+    var toggle = document.querySelector("[data-theme-toggle]");
+    if (toggle) {
+      toggle.addEventListener("click", function () {
+        var dark = document.documentElement.dataset.theme
+          ? document.documentElement.dataset.theme === "dark"
+          : window.matchMedia("(prefers-color-scheme: dark)").matches;
+        var next = dark ? "light" : "dark";
+        document.documentElement.dataset.theme = next;
+        try { localStorage.setItem("span-theme", next); } catch (e) {}
+      });
+    }
+
+    // Идущий таймер тикает в браузере — иначе цифра врёт до перезагрузки.
+    var clock = document.querySelector("[data-tick]");
+    if (clock) {
+      var started = parseInt(clock.dataset.tick, 10) * 1000;
+      var pad = function (n) { return n < 10 ? "0" + n : String(n); };
+      setInterval(function () {
+        var s = Math.max(0, Math.floor((Date.now() - started) / 1000));
+        clock.textContent = Math.floor(s / 3600) + ":" + pad(Math.floor(s / 60) % 60) + ":" + pad(s % 60);
+      }, 1000);
+    }
+
+    document.querySelectorAll("[data-confirm]").forEach(function (form) {
+      form.addEventListener("submit", function (e) {
+        if (!window.confirm(form.dataset.confirm)) { e.preventDefault(); }
+      });
+    });
+
+    var copy = document.querySelector("[data-copy]");
+    if (copy) {
+      copy.addEventListener("click", function () {
+        var rows = document.querySelectorAll("[data-line]");
+        var text = Array.prototype.map.call(rows, function (row) {
+          return Array.prototype.map.call(row.children, function (cell) {
+            return cell.textContent.trim();
+          }).join("\t");
+        }).join("\n");
+        navigator.clipboard.writeText(text).then(function () {
+          var was = copy.textContent;
+          copy.textContent = copy.dataset.copied;
+          setTimeout(function () { copy.textContent = was; }, 1600);
+        });
+      });
+    }
+  })();
+</script>
+</body>
+</html>
+{{end}}

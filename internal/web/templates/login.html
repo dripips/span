@@ -1,0 +1,27 @@
+{{template "head" .}}
+<main class="auth">
+  <div class="panel auth__card">
+    <div class="auth__head">
+      <span class="brand__mark brand__mark--lg" aria-hidden="true">
+        <svg width="22" height="22" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
+          <circle cx="8" cy="8" r="6.4"/><path d="M8 4.6V8l2.4 1.6"/>
+        </svg>
+      </span>
+      <h1>Span</h1>
+      <p class="auth__tagline">{{t .Lang "app.tagline"}}</p>
+    </div>
+    <form class="form" method="post" action="/login">
+      {{if .Error}}<p class="form-error" role="alert">{{t .Lang "login.error"}}</p>{{end}}
+      <div class="field">
+        <label for="email">{{t .Lang "login.email"}}</label>
+        <input class="input" id="email" type="email" name="email" autocomplete="username" required autofocus>
+      </div>
+      <div class="field">
+        <label for="password">{{t .Lang "login.password"}}</label>
+        <input class="input" id="password" type="password" name="password" autocomplete="current-password" required>
+      </div>
+      <button class="btn btn--primary btn--wide">{{t .Lang "login.submit"}}</button>
+    </form>
+  </div>
+</main>
+{{template "foot" .}}

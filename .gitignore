@@ -1,0 +1,9 @@
+# бинарники и база остаются на машине, в репозитории им нечего делать
+span
+span.exe
+span-seed.exe
+*.db
+*.db-shm
+*.db-wal
+.env
+.impeccable/mocks/

@@ -1,0 +1,102 @@
+{{template "head" .}}
+{{template "topbar" .}}
+<main class="wrap">
+  <div class="page-head">
+    <div>
+      <h1>{{t .Lang "report.title"}}</h1>
+      <p class="week-head__range">{{stamp .From}} — {{stamp .To}}</p>
+    </div>
+    <form class="period" method="get" action="/report">
+      <input class="input" type="date" name="from" value="{{iso .From}}" aria-label="{{t .Lang "entry.from"}}">
+      <span class="period__dash">—</span>
+      <input class="input" type="date" name="to" value="{{iso .To}}" aria-label="{{t .Lang "entry.to"}}">
+      <button class="btn btn--ghost btn--sm">{{t .Lang "report.period"}}</button>
+      <a class="btn btn--ghost btn--sm" href="/report.csv?from={{iso .From}}&amp;to={{iso .To}}">{{t .Lang "report.csv"}}</a>
+    </form>
+  </div>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="stat__label">{{t .Lang "report.hours"}}</div>
+      <div class="stat__value">{{hm .Period.Minutes}}</div>
+    </div>
+    <div class="stat">
+      <div class="stat__label">{{t .Lang "report.billable"}}</div>
+      <div class="stat__value">{{hm .Period.Billable}}</div>
+      <div class="stat__note">{{hm (sub .Period.Minutes .Period.Billable)}} {{t .Lang "report.unbilled"}}</div>
+    </div>
+    <div class="stat">
+      <div class="stat__label">{{t .Lang "report.amount"}}</div>
+      <div class="stat__value">{{money .Period.Amount .Period.Currency}}</div>
+    </div>
+  </div>
+
+  {{if .Period.Clients}}
+  <section class="panel">
+    <div class="panel__head"><span class="panel__title">{{t .Lang "nav.clients"}}</span></div>
+    {{range .Period.Clients}}
+      <div class="client-sum">
+        <div class="client-sum__head">
+          <span class="client-sum__name">{{.Client}}</span>
+          <span class="client-sum__figures num">{{hm .Minutes}} · {{money .Amount .Currency}}</span>
+        </div>
+        {{$max := .Minutes}}
+        {{range .Projects}}
+        <div class="bar-row">
+          <span class="bar-row__name">{{.Project}}</span>
+          <span class="bar-row__track">
+            <span class="bar-row__fill" style="width: {{pct .Minutes $max}}%; background: {{.Color}}"></span>
+          </span>
+          <span class="bar-row__value num">{{hm .Minutes}}</span>
+        </div>
+        {{end}}
+      </div>
+    {{end}}
+  </section>
+
+  <section class="panel lines-panel">
+    <div class="panel__head">
+      <div>
+        <span class="panel__title">{{t .Lang "report.lines"}}</span>
+        <p class="panel__hint">{{t .Lang "report.lines_hint"}}</p>
+      </div>
+      {{if .Lines}}
+      <button class="btn btn--primary btn--sm" data-copy data-copied="{{t .Lang "report.copied"}}" type="button">{{t .Lang "report.copy"}}</button>
+      {{end}}
+    </div>
+    {{if .Lines}}
+    <table class="lines">
+      <thead>
+        <tr>
+          <th>{{t .Lang "report.client"}}</th>
+          <th>{{t .Lang "entry.desc"}}</th>
+          <th class="num">{{t .Lang "report.hours"}}</th>
+          <th class="num">{{t .Lang "clients.rate"}}</th>
+          <th class="num">{{t .Lang "report.amount"}}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range .Lines}}
+        <tr data-line>
+          <td>{{.Client}}</td>
+          <td>{{.Description}}</td>
+          <td class="num">{{printf "%.2f" .Hours}}</td>
+          <td class="num">{{money .Rate .Currency}}</td>
+          <td class="num"><strong>{{money .Amount .Currency}}</strong></td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+    {{else}}
+    <p class="empty__hint" style="padding: 24px">{{t .Lang "report.empty"}}</p>
+    {{end}}
+  </section>
+  {{else}}
+  <div class="panel empty">
+    <p class="empty__title">{{t .Lang "report.empty"}}</p>
+    <p class="empty__hint">{{t .Lang "report.empty_hint"}}</p>
+    <p><a class="btn btn--primary" href="/">{{t .Lang "nav.week"}}</a></p>
+  </div>
+  {{end}}
+</main>
+{{template "foot" .}}

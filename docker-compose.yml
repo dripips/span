@@ -1,0 +1,18 @@
+services:
+  span:
+    build: .
+    image: span:latest
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      # Смените до выкладывания наружу: учётка заводится при первом запуске.
+      SPAN_EMAIL: you@example.com
+      SPAN_PASSWORD: span
+      # Часовой пояс важен: неделя и день считаются по местному времени.
+      TZ: Europe/Moscow
+    volumes:
+      - span-data:/data
+
+volumes:
+  span-data:

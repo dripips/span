@@ -1,0 +1,13 @@
+.git
+.gitignore
+.impeccable
+*.db
+*.db-shm
+*.db-wal
+span
+span.exe
+span-seed.exe
+docs
+README*.md
+DESIGN.md
+PRODUCT.md

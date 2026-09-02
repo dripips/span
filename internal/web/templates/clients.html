@@ -1,0 +1,167 @@
+{{template "head" .}}
+{{template "topbar" .}}
+<main class="wrap">
+  <div class="page-head">
+    <div>
+      <h1>{{t .Lang "clients.title"}}</h1>
+      <p class="week-head__range">{{t .Lang "clients.empty_hint"}}</p>
+    </div>
+    <a class="btn btn--primary btn--sm" href="#new-client">{{t .Lang "clients.new"}}</a>
+  </div>
+
+  {{if .Clients}}
+  <div class="client-grid">
+    {{range $client := .Clients}}
+    <section class="panel client-card">
+      <div class="panel__head">
+        <div>
+          <span class="client-card__name">{{$client.Name}}</span>
+          <p class="client-card__meta num">{{money $client.Rate $client.Currency}}/{{t $.Lang "unit.hours"}} · {{rounding $.Lang $client.Rounding}}</p>
+        </div>
+        <details class="menu">
+          <summary class="icon-btn" aria-label="{{t $.Lang "clients.save"}}">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><circle cx="8" cy="3" r="1.4"/><circle cx="8" cy="8" r="1.4"/><circle cx="8" cy="13" r="1.4"/></svg>
+          </summary>
+          <form class="form" method="post" action="/clients/{{$client.ID}}">
+            <div class="field">
+              <label for="c{{$client.ID}}-name">{{t $.Lang "clients.name"}}</label>
+              <input class="input" id="c{{$client.ID}}-name" name="name" value="{{$client.Name}}" required>
+            </div>
+            <div class="row3">
+              <div class="field">
+                <label for="c{{$client.ID}}-rate">{{t $.Lang "clients.rate"}}</label>
+                <input class="input" id="c{{$client.ID}}-rate" name="rate" inputmode="decimal" value="{{$client.Rate}}">
+              </div>
+              <div class="field">
+                <label for="c{{$client.ID}}-cur">{{t $.Lang "clients.currency"}}</label>
+                <select class="select" id="c{{$client.ID}}-cur" name="currency">
+                  {{range $cur := currencies}}<option value="{{$cur}}"{{if eq $cur $client.Currency}} selected{{end}}>{{$cur}}</option>{{end}}
+                </select>
+              </div>
+              <div class="field">
+                <label for="c{{$client.ID}}-round">{{t $.Lang "clients.rounding"}}</label>
+                <select class="select" id="c{{$client.ID}}-round" name="rounding">
+                  {{range $r := roundings}}<option value="{{$r}}"{{if eq $r $client.Rounding}} selected{{end}}>{{rounding $.Lang $r}}</option>{{end}}
+                </select>
+              </div>
+            </div>
+            <div class="field">
+              <label for="c{{$client.ID}}-notes">{{t $.Lang "clients.notes"}}</label>
+              <input class="input" id="c{{$client.ID}}-notes" name="notes" value="{{$client.Notes}}">
+            </div>
+            <div class="form__actions">
+              <button class="btn btn--primary btn--sm">{{t $.Lang "clients.save"}}</button>
+              <button class="btn btn--danger btn--sm" form="del-client-{{$client.ID}}">{{t $.Lang "clients.delete"}}</button>
+            </div>
+          </form>
+        </details>
+      </div>
+
+      {{if $client.Notes}}<p class="client-card__notes">{{$client.Notes}}</p>{{end}}
+
+      {{range $p := projectsOf $.Projects $client.ID}}
+      <details class="project-row">
+        <summary>
+          <span class="project-dot" style="background: {{$p.Color}}"></span>
+          <span class="row-item__name">{{$p.Name}}</span>
+          <span class="row-item__time num">{{money (rate $p $client) $client.Currency}}/{{t $.Lang "unit.hours"}}</span>
+        </summary>
+        <form class="form form--tight" method="post" action="/projects/{{$p.ID}}">
+          <input type="hidden" name="client_id" value="{{$client.ID}}">
+          <div class="row3">
+            <div class="field">
+              <label for="p{{$p.ID}}-name">{{t $.Lang "clients.name"}}</label>
+              <input class="input" id="p{{$p.ID}}-name" name="name" value="{{$p.Name}}" required>
+            </div>
+            <div class="field">
+              <label for="p{{$p.ID}}-rate">{{t $.Lang "clients.project_rate"}}</label>
+              <input class="input" id="p{{$p.ID}}-rate" name="rate" inputmode="decimal" placeholder="{{t $.Lang "clients.project_rate_hint"}}" value="{{if $p.Rate.Valid}}{{$p.Rate.Float64}}{{end}}">
+            </div>
+            <div class="field">
+              <label for="p{{$p.ID}}-color">{{t $.Lang "clients.color"}}</label>
+              <input class="input input--color" id="p{{$p.ID}}-color" type="color" name="color" value="{{$p.Color}}">
+            </div>
+          </div>
+          <div class="form__actions">
+            <button class="btn btn--primary btn--sm">{{t $.Lang "clients.save"}}</button>
+            <button class="btn btn--danger btn--sm" form="del-project-{{$p.ID}}">{{t $.Lang "clients.delete"}}</button>
+          </div>
+        </form>
+      </details>
+      {{end}}
+
+      <details class="project-row project-row--new">
+        <summary><span class="plus" aria-hidden="true">+</span> {{t $.Lang "clients.new_project"}}</summary>
+        <form class="form form--tight" method="post" action="/projects">
+          <input type="hidden" name="client_id" value="{{$client.ID}}">
+          <div class="row3">
+            <div class="field">
+              <label for="np{{$client.ID}}-name">{{t $.Lang "clients.name"}}</label>
+              <input class="input" id="np{{$client.ID}}-name" name="name" required>
+            </div>
+            <div class="field">
+              <label for="np{{$client.ID}}-rate">{{t $.Lang "clients.project_rate"}}</label>
+              <input class="input" id="np{{$client.ID}}-rate" name="rate" inputmode="decimal" placeholder="{{t $.Lang "clients.project_rate_hint"}}">
+            </div>
+            <div class="field">
+              <label for="np{{$client.ID}}-color">{{t $.Lang "clients.color"}}</label>
+              <input class="input input--color" id="np{{$client.ID}}-color" type="color" name="color" value="#2563eb">
+            </div>
+          </div>
+          <div class="form__actions">
+            <button class="btn btn--primary btn--sm">{{t $.Lang "clients.save"}}</button>
+          </div>
+        </form>
+      </details>
+    </section>
+    {{end}}
+  </div>
+  {{else}}
+  <div class="panel empty">
+    <p class="empty__title">{{t .Lang "clients.empty"}}</p>
+    <p class="empty__hint">{{t .Lang "clients.empty_hint"}}</p>
+  </div>
+  {{end}}
+
+  <section class="panel new-client" id="new-client">
+    <div class="panel__head"><span class="panel__title">{{t .Lang "clients.new"}}</span></div>
+    <form class="form" method="post" action="/clients">
+      <div class="row2">
+        <div class="field">
+          <label for="nc-name">{{t .Lang "clients.name"}}</label>
+          <input class="input" id="nc-name" name="name" required>
+        </div>
+        <div class="field">
+          <label for="nc-rate">{{t .Lang "clients.rate"}}</label>
+          <input class="input" id="nc-rate" name="rate" inputmode="decimal" value="0">
+        </div>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label for="nc-cur">{{t .Lang "clients.currency"}}</label>
+          <select class="select" id="nc-cur" name="currency">
+            {{range $cur := currencies}}<option value="{{$cur}}">{{$cur}}</option>{{end}}
+          </select>
+        </div>
+        <div class="field">
+          <label for="nc-round">{{t .Lang "clients.rounding"}}</label>
+          <select class="select" id="nc-round" name="rounding">
+            {{range $r := roundings}}<option value="{{$r}}">{{rounding $.Lang $r}}</option>{{end}}
+          </select>
+          <span class="field__hint">{{t .Lang "clients.rounding_hint"}}</span>
+        </div>
+      </div>
+      <div class="form__actions">
+        <button class="btn btn--primary">{{t .Lang "clients.save"}}</button>
+      </div>
+    </form>
+  </section>
+
+  {{range .Clients}}
+  <form id="del-client-{{.ID}}" method="post" action="/clients/{{.ID}}/delete" data-confirm="{{t $.Lang "clients.delete_confirm"}}"></form>
+  {{end}}
+  {{range .Projects}}
+  <form id="del-project-{{.ID}}" method="post" action="/projects/{{.ID}}/delete" data-confirm="{{t $.Lang "clients.delete_confirm"}}"></form>
+  {{end}}
+</main>
+{{template "foot" .}}
